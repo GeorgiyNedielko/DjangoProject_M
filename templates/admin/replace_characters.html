@@ -1,0 +1,22 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+<h1>Замена символов</h1>
+
+<p>Вы выбрали {{ queryset|length }} проект(ов).</p>
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+
+    <!-- Эти поля нужны, чтобы админка поняла, что это всё ещё действие -->
+    <input type="hidden" name="action" value="replace_characters">
+    <input type="hidden" name="select_across" value="0">
+    {% for obj in queryset %}
+        <input type="hidden" name="_selected_action" value="{{ obj.pk }}">
+    {% endfor %}
+
+    <!-- ВАЖНО: name="apply" — по нему мы отличаем второй POST -->
+    <button type="submit" name="apply">Выполнить замену</button>
+</form>
+{% endblock %}

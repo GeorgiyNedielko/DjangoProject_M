@@ -1,6 +1,4 @@
 from django.db import models
-
-from django.db import models
 from django.core.validators import MinLengthValidator, MaxValueValidator
 from django.contrib.auth.models import User
 from django import forms
@@ -60,7 +58,8 @@ PRIORITY_CHOICES = [
 class Task(models.Model):
     title = models.CharField(
         max_length=255,
-        validators=[MinLengthValidator(10)]
+        validators=[MinLengthValidator(10)],
+        unique=True,
     )
     description = models.TextField(null=True, blank=True)
 
@@ -83,32 +82,14 @@ class Task(models.Model):
     due_date = models.DateTimeField(null=True, blank=True)
     tags = models.ManyToManyField('Tag', blank=True, related_name='tasks')
 
-    class Meta:
-        # 1. Названия модели
-        verbose_name = 'Задача'
-        verbose_name_plural = 'Задачи'
-
-        # 2. Порядок отображения:
-        #    сначала по дате сдачи (от самой дальней к ближайшей),
-        #    потом по закреплённому сотруднику
-        ordering = ['-due_date', 'assignee']
-
-        # 3. Уникальность по названию + проекту
-        constraints = [
-            models.UniqueConstraint(
-                fields=['title', 'project'],
-                name='unique_task_title_project',
-            )
-        ]
-
     def __str__(self):
         return self.title
 
     class Meta:
-        ordering = ['-due_date', '-priority']
+        db_table = 'task_manager_task'
+        ordering = ['-created_at']
         verbose_name = 'Task'
         verbose_name_plural = 'Tasks'
-        unique_together = (('title', 'project'),)
 
 class Tag(models.Model):
     name = models.CharField(max_length=20, unique=True)
@@ -138,3 +119,32 @@ class ProjectFile(models.Model):
     def __str__(self):
         return self.name
 
+class SubTask(models.Model):
+    title = models.CharField(max_length=255,
+                             unique=True,)
+    description = models.TextField(null=True, blank=True)
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='subtasks', verbose_name='Задача',)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.title
+
+    class Meta:
+        db_table = 'task_manager_subtask'
+        ordering = ['-created_at']
+        verbose_name = 'SubTask'
+        verbose_name_plural = 'SubTasks'
+
+class Category(models.Model):
+    name = models.CharField(
+        max_length=100,
+        unique=True,
+    )
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        db_table = 'task_manager_category'
+        verbose_name = 'Category'
+        verbose_name_plural = 'Categories'

@@ -356,6 +356,9 @@ class Book(models.Model):
         validators=[MaxValueValidator(10000)],
         help_text="Количество страниц (максимум 10000)"
     )
+    def __str__(self):
+        return  f"{self.name} by {self.author}"
+
 
     @property
     def rating(self):

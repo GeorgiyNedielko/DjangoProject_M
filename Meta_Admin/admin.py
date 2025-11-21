@@ -2,7 +2,7 @@ from django.contrib import admin
 from django import forms
 from django.shortcuts import render, redirect
 
-from .models import Project, Task, Tag, ProjectFile
+from .models import Project, Task, Tag, ProjectFile, SubTask, Category
 
 
 class ReplaceCharactersForm(forms.Form):
@@ -100,3 +100,18 @@ class TagAdmin(admin.ModelAdmin):
 @admin.register(ProjectFile)
 class ProjectFileAdmin(admin.ModelAdmin):
     list_display = ("id", "name", "created_at")
+
+@admin.register(SubTask)
+class SubTaskAdmin(admin.ModelAdmin):
+    list_display = ("id", "title", "task", "created_at")
+    list_filter = ("task",)
+    search_fields = ("title", "description", "task__title")
+    ordering = ("-created_at",)
+
+
+@admin.register(Category)
+class CategoryAdmin(admin.ModelAdmin):
+    list_display = ("id", "name")
+    search_fields = ("name",)
+    ordering = ("name",)
+

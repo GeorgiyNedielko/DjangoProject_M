@@ -58,4 +58,8 @@ INSTALLED_APPS = [
 ]
 
 
+Запуск:
+
+python manage.py shell
+python manage.py shell -i ipython
 python manage.py shell_plus

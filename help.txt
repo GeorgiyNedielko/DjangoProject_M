@@ -1,0 +1,61 @@
+pip install ipython
+
+python manage.py shell -i ipython
+
+Это тот же Django shell, но со сверхспособностями IPython.
+
+Прокачанный режим:
+
+✔ автодополнение по Tab
+
+✔ подсказки по методам (obj.method?)
+
+✔ просмотр документации (?, ??)
+
+✔ удобная история команд
+
+✔ цветной вывод
+
+✔ магические команды (%time, %timeit, %debug)
+
+✔ можно легко импортировать и тестировать большие куски кода
+
+Фактически — рабочий инструмент разработчика.
+
+Никаких минусов для работы с Django нет вообще.
+
+
+
+
+3. Django Extensions → shell_plus
+
+Это третья, ещё более продвинутая версия.
+
+Запуск:
+
+python manage.py shell_plus
+
+
+Это IPython, но:
+
+✔ автоматически импортирует ВСЕ модели Django
+
+→ Никаких from Meta_Admin.models import Task
+
+✔ автоподключение пакетов, библиотек
+✔ дополнительные команды для ORM
+✔ максимальный комфорт работы
+
+
+
+нужно установить пакет:
+
+pip install django-extensions
++
+INSTALLED_APPS = [
+    ...
+    'django_extensions',
+]
+
+
+python manage.py shell_plus

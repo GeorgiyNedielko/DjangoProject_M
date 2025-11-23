@@ -356,6 +356,15 @@ class Book(models.Model):
         validators=[MaxValueValidator(10000)],
         help_text="Количество страниц (максимум 10000)"
     )
+
+    price = models.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name="Цена",
+    )
+
     def __str__(self):
         return  f"{self.name} by {self.author}"
 

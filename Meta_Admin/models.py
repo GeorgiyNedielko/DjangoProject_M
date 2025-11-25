@@ -4,6 +4,8 @@ from django.contrib.auth.models import User
 from django import forms
 from django.shortcuts import render, redirect
 
+
+
 class Project(models.Model):
     name = models.CharField(max_length=100, unique=True)
     description = models.TextField()

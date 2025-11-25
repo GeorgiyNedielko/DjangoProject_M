@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'library',
     'core',
     'Meta_Admin',
+    'rest_framework',
 ]
 
 MIDDLEWARE = [

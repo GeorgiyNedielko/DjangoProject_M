@@ -302,15 +302,6 @@ class Book(models.Model):
         verbose_name="Автор",
     )
 
-    publisher = models.ForeignKey(
-        Member,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        verbose_name="Публикатор",
-        related_name="published_books",   #
-    )
-
     category = models.ForeignKey(
         Category,
         null=True,
@@ -327,8 +318,14 @@ class Book(models.Model):
         verbose_name="Библиотека",
     )
 
-    # ЭТУ строку УДАЛЯЕМ!
-    # publisher_id = models.F(Member, null=True, on_delete=models.CASCADE)
+    publisher = models.ForeignKey(
+        'Publisher',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="books",
+        verbose_name="Издатель",
+    )
 
     published_date = models.DateField(
         null=True,
@@ -358,19 +355,33 @@ class Book(models.Model):
     )
 
     price = models.DecimalField(
-        max_digits=8,
+        max_digits=10,
+        decimal_places=2,
+        verbose_name="Цена",
+        null=True,
+        blank=True,
+    )
+
+    discounted_price = models.DecimalField(
+        max_digits=10,
         decimal_places=2,
         null=True,
         blank=True,
-        verbose_name="Цена",
+        verbose_name="Цена со скидкой"
     )
-    publisher = models.ForeignKey('Publisher', on_delete=models.CASCADE,
-                                  null=True, blank=True)
 
-    def __str__(self):
-        return  f"{self.name} by {self.author}"
+    is_bestseller = models.BooleanField(
+        default=False,
+        verbose_name="Бестселлер"
+    )
 
     created_at = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.name} by {self.author or 'Unknown'}"
+
+
+
     @property
     def rating(self):
         result = self.reviews.aggregate(avg_rating=Avg('rating'))['avg_rating']

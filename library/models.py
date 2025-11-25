@@ -364,11 +364,13 @@ class Book(models.Model):
         blank=True,
         verbose_name="Цена",
     )
+    publisher = models.ForeignKey('Publisher', on_delete=models.CASCADE,
+                                  null=True, blank=True)
 
     def __str__(self):
         return  f"{self.name} by {self.author}"
 
-
+    created_at = models.DateTimeField(null=True, blank=True)
     @property
     def rating(self):
         result = self.reviews.aggregate(avg_rating=Avg('rating'))['avg_rating']
@@ -512,3 +514,10 @@ class SubTask(models.Model):
 
     def __str__(self):
         return f'{self.title} ({self.task})'
+
+class Publisher(models.Model):
+    name = models.CharField(max_length=100)
+    established_date = models.DateField()
+
+    def __str__(self):
+        return self.name

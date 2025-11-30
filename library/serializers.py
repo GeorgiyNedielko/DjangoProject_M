@@ -43,7 +43,13 @@ class BookCreateUpdateSerializer(serializers.ModelSerializer):
     поэтому его не даём изменять через API.
     """
 
+    class BookCreateSerializer(serializers.ModelSerializer):
+        discounted_price = serializers.DecimalField(
+            max_digits=10, decimal_places=2, write_only=True, required=False
+        )
+
     class Meta:
         model = Book
-        exclude = ("created_at",)
+        fields = '__all__'
+
 

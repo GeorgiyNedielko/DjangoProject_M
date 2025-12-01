@@ -58,6 +58,24 @@ PRIORITY_CHOICES = [
 
 
 class Task(models.Model):
+    STATUS_NEW = "New"
+    STATUS_PENDING = "Pending"
+    STATUS_IN_PROGRESS = "In Progress"
+    STATUS_CLOSED = "Closed"
+
+    STATUS_CHOICES = [
+        (STATUS_NEW, "New"),
+        (STATUS_PENDING, "Pending"),
+        (STATUS_IN_PROGRESS, "In Progress"),
+        (STATUS_CLOSED, "Closed"),
+    ]
+
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default=STATUS_NEW,
+    )
+
     title = models.CharField(
         max_length=255,
         validators=[MinLengthValidator(10)],
@@ -122,15 +140,29 @@ class ProjectFile(models.Model):
         return self.name
 
 class SubTask(models.Model):
-    title = models.CharField(max_length=255,
-                             unique=True,)
-    description = models.TextField(null=True, blank=True)
-    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='subtasks', verbose_name='Задача',)
-    created_at = models.DateTimeField(auto_now_add=True)
+    STATUS_CHOICES = Task.STATUS_CHOICES
+
+    title = models.CharField(max_length=255, verbose_name="Название подзадачи")
+    description = models.TextField(null=True, blank=True, verbose_name="Описание")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Создано")
     deadline = models.DateTimeField(null=True, blank=True, verbose_name="Дедлайн")
 
+    task = models.ForeignKey(
+        Task,
+        on_delete=models.CASCADE,
+        related_name="subtasks",
+        verbose_name="Главная задача",
+    )
+
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default=Task.STATUS_NEW,
+        verbose_name="Статус подзадачи",
+    )
+
     def __str__(self):
-        return self.title
+        return f"{self.title} ({self.task})"
 
     class Meta:
         db_table = 'task_manager_subtask'

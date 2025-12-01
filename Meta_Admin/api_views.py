@@ -6,6 +6,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
+from rest_framework.pagination import PageNumberPagination
 
 from .models import Task, SubTask
 from .serializers import (
@@ -16,7 +17,31 @@ from .serializers import (
 )
 
 
-# ===== Функции для Task (они у тебя уже были) =====
+DAY_NAME_TO_WEEKDAY = {
+    "sunday": 1,
+    "воскресенье": 1,
+
+    "monday": 2,
+    "понедельник": 2,
+
+    "tuesday": 3,
+    "вторник": 3,
+
+    "wednesday": 4,
+    "среда": 4,
+
+    "thursday": 5,
+    "четверг": 5,
+
+    "friday": 6,
+    "пятница": 6,
+
+    "saturday": 7,
+    "суббота": 7,
+}
+
+
+# ---------- TASKS ----------
 
 @api_view(["POST"])
 def create_task(request):
@@ -31,8 +56,36 @@ def create_task(request):
 def tasks_list(request):
     """
     Получение списка задач.
+
+    Если параметр ?day_of_week не передан — вернуть все задачи.
+    Если передан — отфильтровать задачи по дню недели поля due_date.
+    Пример: /api/tasks/?day_of_week=вторник
     """
     tasks = Task.objects.all()
+
+    day_param = request.query_params.get("day_of_week")
+
+    # Параметр не передан — возвращаем все задачи
+    if not day_param:
+        serializer = TaskSerializer(tasks, many=True)
+        return Response(serializer.data)
+
+    # Параметр передан — фильтруем по дню недели
+    day_name = day_param.strip().lower()
+    weekday_num = DAY_NAME_TO_WEEKDAY.get(day_name)
+
+    if weekday_num is None:
+        return Response(
+            {
+                "detail": "Некорректный день недели.",
+                "allowed_values": list(DAY_NAME_TO_WEEKDAY.keys()),
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    # Фильтрация по полю due_date
+    tasks = tasks.filter(due_date__week_day=weekday_num)
+
     serializer = TaskSerializer(tasks, many=True)
     return Response(serializer.data)
 
@@ -74,19 +127,63 @@ def tasks_stats(request):
     }
     return Response(data)
 
+@api_view(["GET"])
+def subtask_statuses(request):
+    """
+    GET /api/subtasks/statuses/
+    Возвращает список доступных статусов подзадач
+    """
+    statuses = [choice[0] for choice in SubTask.STATUS_CHOICES]
+    return Response({"available_statuses": statuses})
 
-# ===== Классы для SubTask (задание 13) =====
+# ---------- SUBTASKS ----------
+
+class SubTaskPagination(PageNumberPagination):
+    """
+    Пагинация для подзадач:
+    по 5 объектов на страницу, без возможности менять размер страницы.
+    """
+    page_size = 5
+    page_size_query_param = None
+    max_page_size = 5
+
 
 class SubTaskListCreateView(APIView):
     """
-    GET  /api/subtasks/       -> список всех подзадач
+    GET  /api/subtasks/       -> список всех подзадач (с пагинацией, сортировка по -created_at)
     POST /api/subtasks/       -> создание подзадачи
     """
 
     def get(self, request):
-        subtasks = SubTask.objects.all()
-        serializer = SubTaskSerializer(subtasks, many=True)
-        return Response(serializer.data)
+        """
+        Фильтры:
+        - ?task_title=...  -> по названию главной задачи (Task.title, icontains)
+        - ?status=...      -> по статусу подзадачи (status, iexact)
+
+        Если фильтры не переданы — вернётся обычный список с пагинацией.
+        """
+
+        # Базовый queryset: все подзадачи, самые новые сначала
+        queryset = SubTask.objects.order_by("-created_at")
+
+        # --- читаем фильтры из query-параметров ---
+        task_title = request.query_params.get("task_title")
+        status_param = request.query_params.get("status")
+
+        # Фильтр по названию главной задачи
+        if task_title:
+            queryset = queryset.filter(task__title__icontains=task_title)
+
+        # Фильтр по статусу подзадачи
+        if status_param:
+            queryset = queryset.filter(status__iexact=status_param)
+
+        # --- пагинация ---
+        paginator = SubTaskPagination()
+        page = paginator.paginate_queryset(queryset, request)
+
+        serializer = SubTaskSerializer(page, many=True)
+        return paginator.get_paginated_response(serializer.data)
 
     def post(self, request):
         serializer = SubTaskCreateSerializer(data=request.data)

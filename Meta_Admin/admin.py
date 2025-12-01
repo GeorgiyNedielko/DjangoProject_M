@@ -101,12 +101,43 @@ class TagAdmin(admin.ModelAdmin):
 class ProjectFileAdmin(admin.ModelAdmin):
     list_display = ("id", "name", "created_at")
 
+from .models import Project, Task, Tag, ProjectFile, SubTask, Category
+
+
 @admin.register(SubTask)
 class SubTaskAdmin(admin.ModelAdmin):
-    list_display = ("id", "title", "task", "created_at")
-    list_filter = ("task",)
+    list_display = ("id", "title", "task", "status", "created_at")
+    list_filter = ("task", "status")
     search_fields = ("title", "description", "task__title")
     ordering = ("-created_at",)
+
+    actions = [
+        "set_status_new",
+        "set_status_pending",
+        "set_status_in_progress",
+        "set_status_closed",
+    ]
+
+    @admin.action(description="Статус подзадачи: New")
+    def set_status_new(self, request, queryset):
+        updated = queryset.update(status=Task.STATUS_NEW)
+        self.message_user(request, f"Статус 'New' установлен у {updated} подзадач.")
+
+    @admin.action(description="Статус подзадачи: Pending")
+    def set_status_pending(self, request, queryset):
+        updated = queryset.update(status=Task.STATUS_PENDING)
+        self.message_user(request, f"Статус 'Pending' установлен у {updated} подзадач.")
+
+    @admin.action(description="Статус подзадачи: In Progress")
+    def set_status_in_progress(self, request, queryset):
+        updated = queryset.update(status=Task.STATUS_IN_PROGRESS)
+        self.message_user(request, f"Статус 'In Progress' установлен у {updated} подзадач.")
+
+    @admin.action(description="Статус подзадачи: Closed")
+    def set_status_closed(self, request, queryset):
+        updated = queryset.update(status=Task.STATUS_CLOSED)
+        self.message_user(request, f"Статус 'Closed' установлен у {updated} подзадач.")
+
 
 
 @admin.register(Category)

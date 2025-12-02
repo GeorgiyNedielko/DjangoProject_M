@@ -19,4 +19,7 @@ urlpatterns = [
 
     # СТАТУСЫ ПОДЗАДАЧ
     path("subtasks/statuses/", subtask_statuses, name="subtask-statuses"),
+
+    # weekda
+    path("api/subtasks/day/<str:weekday>/", api_views.subtasks_by_weekday),
 ]

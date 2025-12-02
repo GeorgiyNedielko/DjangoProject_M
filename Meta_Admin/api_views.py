@@ -1,3 +1,4 @@
+from django.contrib.admin.templatetags.admin_list import pagination
 from django.utils import timezone
 from django.db.models import Count
 from django.shortcuts import get_object_or_404
@@ -232,3 +233,31 @@ class SubTaskDetailUpdateDeleteView(APIView):
         subtask = self.get_object(pk)
         subtask.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+@api_view(["GET"])
+def subtasks_by_weekday(request, weekday):
+    """
+    GET /api/subtasks/day/sunday
+    Фильтрация подзадач по дню недели главной задачи.
+    """
+    weekday = weekday.lower()
+    weekday_num = DAY_NAME_TO_WEEKDAY.get(weekday)
+
+    if not weekday_num:
+        return Response(
+            {
+                "detail": "Некорректный день недели.",
+                "allowed_values": list(DAY_NAME_TO_WEEKDAY.keys())
+            },
+            status=400
+        )
+
+    queryset = SubTask.objects.filter(task__due_date__week_day=weekday_num).order_by("-created_at")
+
+    paginator = SubTaskPagination()
+    page = paginator.paginate_queryset(queryset,request)
+
+    serializer = SubTaskSerializer(page, many=True)
+    return paginator.get_paginated_response(serializer.data)
+
+

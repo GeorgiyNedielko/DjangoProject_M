@@ -1,0 +1,40 @@
+Получить список задач + фильтрация + поиск + сортировка
+GET /api/tasks/
+
+Фильтрация:
+GET /api/tasks/?status=<status>
+GET /api/tasks/?deadline=2025-12-31
+
+Комбинированная фильтрация:
+GET /api/tasks/?status=completed&deadline=2025-12-20
+
+Поиск (title, description)
+GET /api/tasks/?search=важно
+
+Сортировка (created_at)
+GET /api/tasks/?ordering=created_at      # по возрастанию
+GET /api/tasks/?ordering=-created_at     # по убыванию
+
+Создать задачу
+POST /api/tasks/
+Content-Type: application/json
+
+{
+  "title": "Купить продукты",
+  "description": "Молоко, хлеб, сыр",
+  "deadline": "2025-12-20",
+  "status": "new"
+}
+
+Получить одну задачу
+GET /api/tasks/<id>/
+
+Обновить задачу (PUT или PATCH)
+PUT /api/tasks/5/
+PATCH /api/tasks/5/
+
+Удалить задачу
+DELETE /api/tasks/5/
+
+Статистика задач (агрегация)
+GET /api/tasks/stats/

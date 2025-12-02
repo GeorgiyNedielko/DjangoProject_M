@@ -1,8 +1,8 @@
-from django.contrib.admin.templatetags.admin_list import pagination
 from django.utils import timezone
 from django.db.models import Count
 from django.shortcuts import get_object_or_404
 
+from rest_framework import generics, filters
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -16,7 +16,7 @@ from .serializers import (
     SubTaskSerializer,
     SubTaskCreateSerializer,
 )
-
+from django_filters.rest_framework import DjangoFilterBackend
 
 DAY_NAME_TO_WEEKDAY = {
     "sunday": 1,
@@ -44,65 +44,108 @@ DAY_NAME_TO_WEEKDAY = {
 
 # ---------- TASKS ----------
 
-@api_view(["POST"])
-def create_task(request):
-    serializer = TaskCreateSerializer(data=request.data)
-    if serializer.is_valid():
-        task = serializer.save()
-        return Response(TaskSerializer(task).data, status=status.HTTP_201_CREATED)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(["GET"])
-def tasks_list(request):
+class TaskListCreateView(generics.ListCreateAPIView):
     """
-    Получение списка задач.
-
-    Если параметр ?day_of_week не передан — вернуть все задачи.
-    Если передан — отфильтровать задачи по дню недели поля due_date.
-    Пример: /api/tasks/?day_of_week=вторник
+    GET /api/tasks/   -> список задач (с фильтрами, поиском, сортировкой)
+    POST /api/tasks/  -> создание задачи
     """
-    tasks = Task.objects.all()
+    queryset = Task.objects.all()
+    filter_backends = [
+        DjangoFilterBackend,
+        filters.SearchFilter,
+        filters.OrderingFilter,
+    ]
 
-    day_param = request.query_params.get("day_of_week")
+    # фильтрация по статусу и дедлайну
+    filterset_fields = ["status", "due_date"]
 
-    # Параметр не передан — возвращаем все задачи
-    if not day_param:
-        serializer = TaskSerializer(tasks, many=True)
-        return Response(serializer.data)
+    # поиск по названию и описанию
+    search_fields = ["title", "description"]
 
-    # Параметр передан — фильтруем по дню недели
-    day_name = day_param.strip().lower()
-    weekday_num = DAY_NAME_TO_WEEKDAY.get(day_name)
+    # сортировка по дате создания
+    ordering_fields = ["created_at"]
+    ordering = ["created_at"]  # сортировка по умолчанию
 
-    if weekday_num is None:
-        return Response(
-            {
-                "detail": "Некорректный день недели.",
-                "allowed_values": list(DAY_NAME_TO_WEEKDAY.keys()),
-            },
-            status=status.HTTP_400_BAD_REQUEST,
-        )
+    def get_serializer_class(self):
+        if self.request.method == "POST":
+            return TaskCreateSerializer
+        return TaskSerializer
 
-    # Фильтрация по полю due_date
-    tasks = tasks.filter(due_date__week_day=weekday_num)
-
-    serializer = TaskSerializer(tasks, many=True)
-    return Response(serializer.data)
-
-
-@api_view(["GET"])
-def task_detail(request, pk):
+class TaskDetailView(generics.RetrieveUpdateDestroyAPIView):
     """
-    Получение одной задачи по её ID.
+    GET    /api/tasks/<id>/ -> получить задачу
+    PUT    /api/tasks/<id>/ -> полное обновление
+    PATCH  /api/tasks/<id>/ -> частичное обновление
+    DELETE /api/tasks/<id>/ -> удалить
     """
-    try:
-        task = Task.objects.get(pk=pk)
-    except Task.DoesNotExist:
-        return Response({"detail": "Task not found"}, status=status.HTTP_404_NOT_FOUND)
+    queryset = Task.objects.all()
 
-    serializer = TaskSerializer(task)
-    return Response(serializer.data)
+    def get_serializer_class(self):
+
+        if self.request.method in ["PUT", "PATCH"]:
+            return TaskCreateSerializer
+        return TaskSerializer
+
+
+# @api_view(["POST"])
+# def create_task(request):
+#     serializer = TaskCreateSerializer(data=request.data)
+#     if serializer.is_valid():
+#         task = serializer.save()
+#         return Response(TaskSerializer(task).data, status=status.HTTP_201_CREATED)
+#     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+#
+#
+# @api_view(["GET"])
+# def tasks_list(request):
+#     """
+#     Получение списка задач.
+#
+#     Если параметр ?day_of_week не передан — вернуть все задачи.
+#     Если передан — отфильтровать задачи по дню недели поля due_date.
+#     Пример: /api/tasks/?day_of_week=вторник
+#     """
+#     tasks = Task.objects.all()
+#
+#     day_param = request.query_params.get("day_of_week")
+#
+#     # Параметр не передан — возвращаем все задачи
+#     if not day_param:
+#         serializer = TaskSerializer(tasks, many=True)
+#         return Response(serializer.data)
+#
+#     # Параметр передан — фильтруем по дню недели
+#     day_name = day_param.strip().lower()
+#     weekday_num = DAY_NAME_TO_WEEKDAY.get(day_name)
+#
+#     if weekday_num is None:
+#         return Response(
+#             {
+#                 "detail": "Некорректный день недели.",
+#                 "allowed_values": list(DAY_NAME_TO_WEEKDAY.keys()),
+#             },
+#             status=status.HTTP_400_BAD_REQUEST,
+#         )
+#
+#     # Фильтрация по полю due_date
+#     tasks = tasks.filter(due_date__week_day=weekday_num)
+#
+#     serializer = TaskSerializer(tasks, many=True)
+#     return Response(serializer.data)
+#
+#
+# @api_view(["GET"])
+# def task_detail(request, pk):
+#     """
+#     Получение одной задачи по её ID.
+#     """
+#     try:
+#         task = Task.objects.get(pk=pk)
+#     except Task.DoesNotExist:
+#         return Response({"detail": "Task not found"}, status=status.HTTP_404_NOT_FOUND)
+#
+#     serializer = TaskSerializer(task)
+#     return Response(serializer.data)
 
 
 @api_view(["GET"])
@@ -148,91 +191,130 @@ class SubTaskPagination(PageNumberPagination):
     page_size_query_param = None
     max_page_size = 5
 
-
-class SubTaskListCreateView(APIView):
+class SubTaskListCreateView(generics.ListCreateAPIView):
     """
-    GET  /api/subtasks/       -> список всех подзадач (с пагинацией, сортировка по -created_at)
-    POST /api/subtasks/       -> создание подзадачи
+    GET  /api/subtasks/   -> список подзадач (с пагинацией, фильтрацией, поиском, сортировкой)
+    POST /api/subtasks/   -> создание подзадачи
     """
+    queryset = SubTask.objects.all()
+    pagination_class = SubTaskPagination
 
-    def get(self, request):
-        """
-        Фильтры:
-        - ?task_title=...  -> по названию главной задачи (Task.title, icontains)
-        - ?status=...      -> по статусу подзадачи (status, iexact)
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
 
-        Если фильтры не переданы — вернётся обычный список с пагинацией.
-        """
+    # фильтрация по статусу и дедлайну
+    filterset_fields = ["status", "deadline"]
 
-        # Базовый queryset: все подзадачи, самые новые сначала
-        queryset = SubTask.objects.order_by("-created_at")
+    # поиск по названию и описанию
+    search_fields = ["title", "description"]
 
-        # --- читаем фильтры из query-параметров ---
-        task_title = request.query_params.get("task_title")
-        status_param = request.query_params.get("status")
+    # сортировка по дате создания
+    ordering_fields = ["created_at"]
+    ordering = ["-created_at"]
 
-        # Фильтр по названию главной задачи
-        if task_title:
-            queryset = queryset.filter(task__title__icontains=task_title)
+    def get_serializer_class(self):
+        if self.request.method == "POST":
+            return SubTaskCreateSerializer
+        return SubTaskSerializer
 
-        # Фильтр по статусу подзадачи
-        if status_param:
-            queryset = queryset.filter(status__iexact=status_param)
+# class SubTaskListCreateView(APIView):
+#     """
+#     GET  /api/subtasks/       -> список всех подзадач (с пагинацией, сортировка по -created_at)
+#     POST /api/subtasks/       -> создание подзадачи
+#     """
+#
+#     def get(self, request):
+#         """
+#         Фильтры:
+#         - ?task_title=...  -> по названию главной задачи (Task.title, icontains)
+#         - ?status=...      -> по статусу подзадачи (status, iexact)
+#
+#         Если фильтры не переданы — вернётся обычный список с пагинацией.
+#         """
+#
+#         # Базовый queryset: все подзадачи, самые новые сначала
+#         queryset = SubTask.objects.order_by("-created_at")
+#
+#         # --- читаем фильтры из query-параметров ---
+#         task_title = request.query_params.get("task_title")
+#         status_param = request.query_params.get("status")
+#
+#         # Фильтр по названию главной задачи
+#         if task_title:
+#             queryset = queryset.filter(task__title__icontains=task_title)
+#
+#         # Фильтр по статусу подзадачи
+#         if status_param:
+#             queryset = queryset.filter(status__iexact=status_param)
+#
+#         # --- пагинация ---
+#         paginator = SubTaskPagination()
+#         page = paginator.paginate_queryset(queryset, request)
+#
+#         serializer = SubTaskSerializer(page, many=True)
+#         return paginator.get_paginated_response(serializer.data)
+#
+#     def post(self, request):
+#         serializer = SubTaskCreateSerializer(data=request.data)
+#         if serializer.is_valid():
+#             subtask = serializer.save()
+#             out_serializer = SubTaskSerializer(subtask)
+#             return Response(out_serializer.data, status=status.HTTP_201_CREATED)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        # --- пагинация ---
-        paginator = SubTaskPagination()
-        page = paginator.paginate_queryset(queryset, request)
 
-        serializer = SubTaskSerializer(page, many=True)
-        return paginator.get_paginated_response(serializer.data)
-
-    def post(self, request):
-        serializer = SubTaskCreateSerializer(data=request.data)
-        if serializer.is_valid():
-            subtask = serializer.save()
-            out_serializer = SubTaskSerializer(subtask)
-            return Response(out_serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-class SubTaskDetailUpdateDeleteView(APIView):
+class SubTaskDetailUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     """
-    GET    /api/subtasks/<id>/   -> получить подзадачу
-    PUT    /api/subtasks/<id>/   -> полное обновление
-    PATCH  /api/subtasks/<id>/   -> частичное обновление
-    DELETE /api/subtasks/<id>/   -> удалить подзадачу
+    GET    /api/subtasks/<id>/
+    PUT    /api/subtasks/<id>/
+    PATCH  /api/subtasks/<id>/
+    DELETE /api/subtasks/<id>/
     """
+    queryset = SubTask.objects.all()
 
-    def get_object(self, pk):
-        return get_object_or_404(SubTask, pk=pk)
+    def get_serializer_class(self):
+        if self.request.method in ["PUT", "PATCH"]:
+            return SubTaskCreateSerializer
+        return SubTaskSerializer
 
-    def get(self, request, pk):
-        subtask = self.get_object(pk)
-        serializer = SubTaskSerializer(subtask)
-        return Response(serializer.data)
 
-    def put(self, request, pk):
-        subtask = self.get_object(pk)
-        serializer = SubTaskCreateSerializer(subtask, data=request.data)
-        if serializer.is_valid():
-            subtask = serializer.save()
-            out_serializer = SubTaskSerializer(subtask)
-            return Response(out_serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def patch(self, request, pk):
-        subtask = self.get_object(pk)
-        serializer = SubTaskCreateSerializer(subtask, data=request.data, partial=True)
-        if serializer.is_valid():
-            subtask = serializer.save()
-            out_serializer = SubTaskSerializer(subtask)
-            return Response(out_serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def delete(self, request, pk):
-        subtask = self.get_object(pk)
-        subtask.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+# class SubTaskDetailUpdateDeleteView(APIView):
+#     """
+#     GET    /api/subtasks/<id>/   -> получить подзадачу
+#     PUT    /api/subtasks/<id>/   -> полное обновление
+#     PATCH  /api/subtasks/<id>/   -> частичное обновление
+#     DELETE /api/subtasks/<id>/   -> удалить подзадачу
+#     """
+#
+#     def get_object(self, pk):
+#         return get_object_or_404(SubTask, pk=pk)
+#
+#     def get(self, request, pk):
+#         subtask = self.get_object(pk)
+#         serializer = SubTaskSerializer(subtask)
+#         return Response(serializer.data)
+#
+#     def put(self, request, pk):
+#         subtask = self.get_object(pk)
+#         serializer = SubTaskCreateSerializer(subtask, data=request.data)
+#         if serializer.is_valid():
+#             subtask = serializer.save()
+#             out_serializer = SubTaskSerializer(subtask)
+#             return Response(out_serializer.data)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+#
+#     def patch(self, request, pk):
+#         subtask = self.get_object(pk)
+#         serializer = SubTaskCreateSerializer(subtask, data=request.data, partial=True)
+#         if serializer.is_valid():
+#             subtask = serializer.save()
+#             out_serializer = SubTaskSerializer(subtask)
+#             return Response(out_serializer.data)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+#
+#     def delete(self, request, pk):
+#         subtask = self.get_object(pk)
+#         subtask.delete()
+#         return Response(status=status.HTTP_204_NO_CONTENT)
 
 @api_view(["GET"])
 def subtasks_by_weekday(request, weekday):

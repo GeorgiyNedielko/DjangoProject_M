@@ -15,6 +15,8 @@ class Command(BaseCommand):
         client_group, _ = Group.objects.get_or_create(name="Client")
         developer_group, _ = Group.objects.get_or_create(name="Developer")
 
+        #_ — флаг, создана ли она (True/False), он нам не нужен.
+
         # --- content types для моделей ---
         ct_group = ContentType.objects.get_for_model(AuthGroup)
         ct_permission = ContentType.objects.get_for_model(Permission)

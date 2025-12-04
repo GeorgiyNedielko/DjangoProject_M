@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Book
+from .models import Book, Category, Supplier, Genre
 
 
 class BookListSerializer(serializers.ModelSerializer):
@@ -8,6 +8,7 @@ class BookListSerializer(serializers.ModelSerializer):
     publisher = serializers.StringRelatedField()
     category = serializers.StringRelatedField()
     library = serializers.StringRelatedField()
+    genre = serializers.StringRelatedField()
 
     class Meta:
         model = Book
@@ -18,6 +19,7 @@ class BookListSerializer(serializers.ModelSerializer):
             "publisher",
             "category",
             "library",
+            "genre",
             "price",
             "discounted_price",
             "is_bestseller",
@@ -30,6 +32,7 @@ class BookDetailSerializer(serializers.ModelSerializer):
     publisher = serializers.StringRelatedField()
     category = serializers.StringRelatedField()
     library = serializers.StringRelatedField()
+    genre = serializers.StringRelatedField()
 
     class Meta:
         model = Book
@@ -37,19 +40,30 @@ class BookDetailSerializer(serializers.ModelSerializer):
 
 
 class BookCreateUpdateSerializer(serializers.ModelSerializer):
-    """
-    Сериализатор для создания/обновления книги.
-    created_at заполняется автоматически (или через сигнал/логика),
-    поэтому его не даём изменять через API.
-    """
-
-    class BookCreateSerializer(serializers.ModelSerializer):
-        discounted_price = serializers.DecimalField(
-            max_digits=10, decimal_places=2, write_only=True, required=False
-        )
+    """Создание/обновление книги"""
 
     class Meta:
         model = Book
-        fields = '__all__'
+        fields = "__all__"
 
 
+class CategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ["id", "name"]
+
+
+class SupplierSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Supplier
+        fields = "__all__"
+
+
+class GenreSerializer(serializers.ModelSerializer):
+    # ВОТ ЭТА СТРОКА ОБЯЗАТЕЛЬНА —
+    # объявляем дополнительное поле, которого нет в модели
+    book_count = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = Genre
+        fields = ["id", "name", "book_count"]

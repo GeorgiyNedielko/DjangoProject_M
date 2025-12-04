@@ -26,3 +26,5 @@ urlpatterns = [
     # weekda
     path("api/subtasks/day/<str:weekday>/", api_views.subtasks_by_weekday),
 ]
+
+

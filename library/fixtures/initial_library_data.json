@@ -1,0 +1,564 @@
+[
+  {
+    "model": "library.author",
+    "pk": 1,
+    "fields": {
+      "name": "J. K. Rowling",
+      "first_name": "Joanne",
+      "last_name": "Rowling",
+      "birth_date": "1965-07-31",
+      "profile": "https://example.com/authors/rowling",
+      "is_deleted": false,
+      "rating": 9
+    }
+  },
+  {
+    "model": "library.author",
+    "pk": 2,
+    "fields": {
+      "name": "George R. R. Martin",
+      "first_name": "George",
+      "last_name": "Martin",
+      "birth_date": "1948-09-20",
+      "profile": "https://example.com/authors/martin",
+      "is_deleted": false,
+      "rating": 10
+    }
+  },
+  {
+    "model": "library.author",
+    "pk": 3,
+    "fields": {
+      "name": "Agatha Christie",
+      "first_name": "Agatha",
+      "last_name": "Christie",
+      "birth_date": "1890-09-15",
+      "profile": "",
+      "is_deleted": false,
+      "rating": 8
+    }
+  },
+  {
+    "model": "library.author",
+    "pk": 4,
+    "fields": {
+      "name": "Isaac Asimov",
+      "first_name": "Isaac",
+      "last_name": "Asimov",
+      "birth_date": "1920-01-02",
+      "profile": "",
+      "is_deleted": false,
+      "rating": 9
+    }
+  },
+  {
+    "model": "library.author",
+    "pk": 5,
+    "fields": {
+      "name": "Haruki Murakami",
+      "first_name": "Haruki",
+      "last_name": "Murakami",
+      "birth_date": "1949-01-12",
+      "profile": "",
+      "is_deleted": false,
+      "rating": 8
+    }
+  },
+
+  {
+    "model": "library.genre",
+    "pk": 1,
+    "fields": {
+      "name": "Fantasy"
+    }
+  },
+  {
+    "model": "library.genre",
+    "pk": 2,
+    "fields": {
+      "name": "Science Fiction"
+    }
+  },
+  {
+    "model": "library.genre",
+    "pk": 3,
+    "fields": {
+      "name": "Mystery"
+    }
+  },
+  {
+    "model": "library.genre",
+    "pk": 4,
+    "fields": {
+      "name": "Literary Fiction"
+    }
+  },
+
+  {
+    "model": "library.publisher",
+    "pk": 1,
+    "fields": {
+      "name": "Penguin Books",
+      "established_date": "1935-01-01"
+    }
+  },
+  {
+    "model": "library.publisher",
+    "pk": 2,
+    "fields": {
+      "name": "HarperCollins",
+      "established_date": "1989-01-01"
+    }
+  },
+  {
+    "model": "library.publisher",
+    "pk": 3,
+    "fields": {
+      "name": "Random House",
+      "established_date": "1927-01-01"
+    }
+  },
+
+  {
+    "model": "library.library",
+    "pk": 1,
+    "fields": {
+      "name": "Central City Library",
+      "location": "Main Street 1",
+      "site": "https://example.com/libraries/central"
+    }
+  },
+  {
+    "model": "library.library",
+    "pk": 2,
+    "fields": {
+      "name": "West Side Library",
+      "location": "West Avenue 15",
+      "site": ""
+    }
+  },
+
+  {
+    "model": "library.category",
+    "pk": 1,
+    "fields": {
+      "name": "Bestsellers"
+    }
+  },
+  {
+    "model": "library.category",
+    "pk": 2,
+    "fields": {
+      "name": "Classics"
+    }
+  },
+  {
+    "model": "library.category",
+    "pk": 3,
+    "fields": {
+      "name": "For Children"
+    }
+  },
+  {
+    "model": "library.category",
+    "pk": 4,
+    "fields": {
+      "name": "For Teens"
+    }
+  },
+  {
+    "model": "library.category",
+    "pk": 5,
+    "fields": {
+      "name": "For Adults"
+    }
+  },
+  {
+    "model": "library.category",
+    "pk": 6,
+    "fields": {
+      "name": "Non-fiction"
+    }
+  },
+
+  {
+    "model": "library.book",
+    "pk": 1,
+    "fields": {
+      "name": "Harry Potter and the Philosopher's Stone",
+      "author": 1,
+      "category": 3,
+      "library": 1,
+      "publisher": 1,
+      "published_date": "1997-06-26",
+      "description": "The first book about the boy who lived.",
+      "genre": 1,
+      "pages": 320,
+      "price": "19.99",
+      "discounted_price": "14.99",
+      "is_bestseller": true,
+      "created_at": "2024-01-01T10:00:00"
+    }
+  },
+  {
+    "model": "library.book",
+    "pk": 2,
+    "fields": {
+      "name": "Harry Potter and the Chamber of Secrets",
+      "author": 1,
+      "category": 3,
+      "library": 1,
+      "publisher": 1,
+      "published_date": "1998-07-02",
+      "description": "Second year at Hogwarts.",
+      "genre": 1,
+      "pages": 340,
+      "price": "19.99",
+      "discounted_price": "15.99",
+      "is_bestseller": true,
+      "created_at": "2024-01-02T10:00:00"
+    }
+  },
+  {
+    "model": "library.book",
+    "pk": 3,
+    "fields": {
+      "name": "Harry Potter and the Prisoner of Azkaban",
+      "author": 1,
+      "category": 4,
+      "library": 1,
+      "publisher": 1,
+      "published_date": "1999-07-08",
+      "description": "Third year at Hogwarts.",
+      "genre": 1,
+      "pages": 360,
+      "price": "21.99",
+      "discounted_price": "17.99",
+      "is_bestseller": true,
+      "created_at": "2024-01-03T10:00:00"
+    }
+  },
+  {
+    "model": "library.book",
+    "pk": 4,
+    "fields": {
+      "name": "A Game of Thrones",
+      "author": 2,
+      "category": 5,
+      "library": 1,
+      "publisher": 2,
+      "published_date": "1996-08-06",
+      "description": "The first book of A Song of Ice and Fire.",
+      "genre": 1,
+      "pages": 694,
+      "price": "24.99",
+      "discounted_price": "19.99",
+      "is_bestseller": true,
+      "created_at": "2024-01-04T10:00:00"
+    }
+  },
+  {
+    "model": "library.book",
+    "pk": 5,
+    "fields": {
+      "name": "A Clash of Kings",
+      "author": 2,
+      "category": 5,
+      "library": 1,
+      "publisher": 2,
+      "published_date": "1998-11-16",
+      "description": "The second book of A Song of Ice and Fire.",
+      "genre": 1,
+      "pages": 768,
+      "price": "25.99",
+      "discounted_price": "20.99",
+      "is_bestseller": true,
+      "created_at": "2024-01-05T10:00:00"
+    }
+  },
+  {
+    "model": "library.book",
+    "pk": 6,
+    "fields": {
+      "name": "A Storm of Swords",
+      "author": 2,
+      "category": 5,
+      "library": 2,
+      "publisher": 2,
+      "published_date": "2000-08-08",
+      "description": "The third book of A Song of Ice and Fire.",
+      "genre": 1,
+      "pages": 973,
+      "price": "27.99",
+      "discounted_price": "22.99",
+      "is_bestseller": true,
+      "created_at": "2024-01-06T10:00:00"
+    }
+  },
+  {
+    "model": "library.book",
+    "pk": 7,
+    "fields": {
+      "name": "Murder on the Orient Express",
+      "author": 3,
+      "category": 2,
+      "library": 2,
+      "publisher": 3,
+      "published_date": "1934-01-01",
+      "description": "Classic Hercule Poirot mystery.",
+      "genre": 3,
+      "pages": 256,
+      "price": "14.99",
+      "discounted_price": "11.99",
+      "is_bestseller": true,
+      "created_at": "2024-01-07T10:00:00"
+    }
+  },
+  {
+    "model": "library.book",
+    "pk": 8,
+    "fields": {
+      "name": "And Then There Were None",
+      "author": 3,
+      "category": 2,
+      "library": 1,
+      "publisher": 3,
+      "published_date": "1939-11-06",
+      "description": "Ten strangers invited to a mysterious island.",
+      "genre": 3,
+      "pages": 272,
+      "price": "15.99",
+      "discounted_price": "12.99",
+      "is_bestseller": true,
+      "created_at": "2024-01-08T10:00:00"
+    }
+  },
+  {
+    "model": "library.book",
+    "pk": 9,
+    "fields": {
+      "name": "Foundation",
+      "author": 4,
+      "category": 6,
+      "library": 1,
+      "publisher": 1,
+      "published_date": "1951-01-01",
+      "description": "A science fiction classic about the fall of the Galactic Empire.",
+      "genre": 2,
+      "pages": 255,
+      "price": "16.99",
+      "discounted_price": "13.99",
+      "is_bestseller": true,
+      "created_at": "2024-01-09T10:00:00"
+    }
+  },
+  {
+    "model": "library.book",
+    "pk": 10,
+    "fields": {
+      "name": "I, Robot",
+      "author": 4,
+      "category": 6,
+      "library": 2,
+      "publisher": 1,
+      "published_date": "1950-01-01",
+      "description": "Collection of robot short stories.",
+      "genre": 2,
+      "pages": 224,
+      "price": "14.99",
+      "discounted_price": "11.99",
+      "is_bestseller": false,
+      "created_at": "2024-01-10T10:00:00"
+    }
+  },
+  {
+    "model": "library.book",
+    "pk": 11,
+    "fields": {
+      "name": "Kafka on the Shore",
+      "author": 5,
+      "category": 5,
+      "library": 2,
+      "publisher": 3,
+      "published_date": "2002-09-12",
+      "description": "A surreal novel by Haruki Murakami.",
+      "genre": 4,
+      "pages": 505,
+      "price": "18.99",
+      "discounted_price": "15.49",
+      "is_bestseller": false,
+      "created_at": "2024-01-11T10:00:00"
+    }
+  },
+  {
+    "model": "library.book",
+    "pk": 12,
+    "fields": {
+      "name": "Norwegian Wood",
+      "author": 5,
+      "category": 5,
+      "library": 1,
+      "publisher": 2,
+      "published_date": "1987-09-04",
+      "description": "A nostalgic story of loss and sexuality.",
+      "genre": 4,
+      "pages": 296,
+      "price": "17.99",
+      "discounted_price": "14.49",
+      "is_bestseller": true,
+      "created_at": "2024-01-12T10:00:00"
+    }
+  },
+  {
+    "model": "library.book",
+    "pk": 13,
+    "fields": {
+      "name": "The Hobbit",
+      "author": 1,
+      "category": 2,
+      "library": 1,
+      "publisher": 3,
+      "published_date": "1937-09-21",
+      "description": "A fantasy adventure before The Lord of the Rings.",
+      "genre": 1,
+      "pages": 310,
+      "price": "18.99",
+      "discounted_price": "13.99",
+      "is_bestseller": true,
+      "created_at": "2024-01-13T10:00:00"
+    }
+  },
+  {
+    "model": "library.book",
+    "pk": 14,
+    "fields": {
+      "name": "The Winds of Winter (Preview)",
+      "author": 2,
+      "category": 5,
+      "library": 2,
+      "publisher": 2,
+      "published_date": "2025-01-01",
+      "description": "Upcoming book in A Song of Ice and Fire (placeholder).",
+      "genre": 1,
+      "pages": 900,
+      "price": "29.99",
+      "discounted_price": "24.99",
+      "is_bestseller": false,
+      "created_at": "2024-01-14T10:00:00"
+    }
+  },
+  {
+    "model": "library.book",
+    "pk": 15,
+    "fields": {
+      "name": "Robots and Empire",
+      "author": 4,
+      "category": 6,
+      "library": 1,
+      "publisher": 1,
+      "published_date": "1985-01-01",
+      "description": "Another classic robot novel by Asimov.",
+      "genre": 2,
+      "pages": 384,
+      "price": "17.99",
+      "discounted_price": "13.99",
+      "is_bestseller": false,
+      "created_at": "2024-01-15T10:00:00"
+    }
+  },
+  {
+    "model": "library.book",
+    "pk": 16,
+    "fields": {
+      "name": "The ABC Murders",
+      "author": 3,
+      "category": 2,
+      "library": 2,
+      "publisher": 3,
+      "published_date": "1936-01-01",
+      "description": "Poirot hunts a serial killer.",
+      "genre": 3,
+      "pages": 288,
+      "price": "15.99",
+      "discounted_price": "12.49",
+      "is_bestseller": false,
+      "created_at": "2024-01-16T10:00:00"
+    }
+  },
+  {
+    "model": "library.book",
+    "pk": 17,
+    "fields": {
+      "name": "Colorless Tsukuru Tazaki",
+      "author": 5,
+      "category": 5,
+      "library": 2,
+      "publisher": 2,
+      "published_date": "2013-04-12",
+      "description": "A novel about friendship and identity.",
+      "genre": 4,
+      "pages": 304,
+      "price": "18.49",
+      "discounted_price": "14.99",
+      "is_bestseller": false,
+      "created_at": "2024-01-17T10:00:00"
+    }
+  },
+  {
+    "model": "library.book",
+    "pk": 18,
+    "fields": {
+      "name": "Childhood Memories",
+      "author": 1,
+      "category": 3,
+      "library": 1,
+      "publisher": 3,
+      "published_date": "2001-01-01",
+      "description": "Imaginary children's stories.",
+      "genre": 1,
+      "pages": 200,
+      "price": "12.99",
+      "discounted_price": "9.99",
+      "is_bestseller": false,
+      "created_at": "2024-01-18T10:00:00"
+    }
+  },
+  {
+    "model": "library.book",
+    "pk": 19,
+    "fields": {
+      "name": "Galaxy Explorers",
+      "author": 4,
+      "category": 6,
+      "library": 2,
+      "publisher": 1,
+      "published_date": "2010-05-10",
+      "description": "Science fiction adventure across galaxies.",
+      "genre": 2,
+      "pages": 420,
+      "price": "19.49",
+      "discounted_price": "15.99",
+      "is_bestseller": false,
+      "created_at": "2024-01-19T10:00:00"
+    }
+  },
+  {
+    "model": "library.book",
+    "pk": 20,
+    "fields": {
+      "name": "Small Town Secrets",
+      "author": 3,
+      "category": 5,
+      "library": 1,
+      "publisher": 2,
+      "published_date": "2005-03-03",
+      "description": "A mystery set in a quiet town.",
+      "genre": 3,
+      "pages": 330,
+      "price": "16.49",
+      "discounted_price": "12.99",
+      "is_bestseller": false,
+      "created_at": "2024-01-20T10:00:00"
+    }
+  }
+]

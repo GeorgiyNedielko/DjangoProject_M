@@ -3,6 +3,7 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils import timezone
 from django.db.models import Avg
 
+
 class Author(models.Model):
     name = models.CharField(
         max_length=255,
@@ -36,8 +37,8 @@ class Author(models.Model):
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
 
+
 class AuthorDetail(models.Model):
-    # Связь с моделью Author (1 к 1 — у автора может быть только одна карточка с деталями)
     author = models.OneToOneField(
         'Author',
         on_delete=models.CASCADE,
@@ -45,15 +46,13 @@ class AuthorDetail(models.Model):
         verbose_name='Автор'
     )
 
-    biography = models.TextField(
-        'Биография'
-    )
+    biography = models.TextField('Биография')
 
     birth_city = models.CharField(
         'Город рождения',
         max_length=100,
         null=True,
-        blank=True          # необязательное поле
+        blank=True
     )
 
     GENDERS = (
@@ -75,26 +74,43 @@ class AuthorDetail(models.Model):
     def __str__(self):
         return f'Данные об авторе: {self.author}'
 
+class CategoryManager(models.Manager):
+    def get_queryset(self):
+        # По умолчанию показываем только не удалённые категории
+        return super().get_queryset().filter(is_deleted=False)
 
 
 class Category(models.Model):
     name = models.CharField('Название категории', max_length=100, unique=True)
 
+    is_deleted = models.BooleanField(
+        default=False,
+        verbose_name="Удалена",
+        help_text="Если True — категория помечена как удалённая (soft delete).",
+    )
+    deleted_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Дата удаления",
+    )
+
+    # менеджеры
+    objects = CategoryManager()      # только живые категории
+    all_objects = models.Manager()   # все категории, включая удалённые
+
     class Meta:
         verbose_name = 'Категория'
         verbose_name_plural = 'Категории'
 
+    def delete(self, *args, **kwargs):
+        """Мягкое удаление категории."""
+        self.is_deleted = True
+        self.deleted_at = timezone.now()
+        self.save(update_fields=["is_deleted", "deleted_at"])
+
     def __str__(self):
         return self.name
 
-
-STATUS_CHOICES = [
-    ('new', 'New'),
-    ('in_progress', 'In progress'),
-    ('pending', 'Pending'),
-    ('blocked', 'Blocked'),
-    ('done', 'Done'),
-]
 
 class Library(models.Model):
     name = models.CharField(max_length=100, verbose_name="Название библиотеки")
@@ -103,6 +119,7 @@ class Library(models.Model):
 
     def __str__(self):
         return self.name
+
 
 class Member(models.Model):
     GENDER_CHOICES = [
@@ -130,7 +147,6 @@ class Member(models.Model):
     )
 
     role = models.CharField(max_length=20, choices=ROLE_CHOICES)
-
     active = models.BooleanField(default=True)
 
     libraries = models.ManyToManyField(
@@ -140,6 +156,7 @@ class Member(models.Model):
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
+
 
 class Posts(models.Model):
     title = models.CharField(
@@ -182,11 +199,11 @@ class Posts(models.Model):
     class Meta:
         verbose_name = "Пост"
         verbose_name_plural = "Посты"
-
         unique_together = ('title', 'created_at')
 
     def __str__(self):
         return self.title
+
 
 class Borrow(models.Model):
     member = models.ForeignKey(
@@ -232,14 +249,14 @@ class Borrow(models.Model):
 
     def is_overdue(self) -> bool:
         """
-        Проверяет, просрочил ли читатель срок сдачи книги.
-        Просрочка = сегодня позже даты возврата и книга ещё не возвращена.
+        Просрочена ли книга: сегодня позже даты возврата и книга ещё не возвращена.
         """
         if self.is_returned:
             return False
 
         today = timezone.localdate()
         return today > self.return_date
+
 
 class Review(models.Model):
     book = models.ForeignKey(
@@ -264,9 +281,7 @@ class Review(models.Model):
         ],
         help_text='Оценка от 1.0 до 5.0',
     )
-    text = models.TextField(
-        'Отзыв',
-    )
+    text = models.TextField('Отзыв')
     created_at = models.DateTimeField(
         'Создано',
         auto_now_add=True,
@@ -281,16 +296,41 @@ class Review(models.Model):
         return f'{self.book} – {self.reviewer} ({self.rating})'
 
 
-class Book(models.Model):
-    GENRE_CHOICES = [
-        ('Fiction', 'Fiction'),
-        ('Non-Fiction', 'Non-Fiction'),
-        ('Science Fiction', 'Science Fiction'),
-        ('Fantasy', 'Fantasy'),
-        ('Mystery', 'Mystery'),
-        ('Biography', 'Biography'),
-    ]
+class Publisher(models.Model):
+    name = models.CharField(max_length=100)
+    established_date = models.DateField()
 
+    def __str__(self):
+        return self.name
+
+
+class Supplier(models.Model):
+    name = models.CharField("Название поставщика", max_length=255)
+    email = models.EmailField("Email", blank=True, null=True)
+    phone = models.CharField("Телефон", max_length=50, blank=True, null=True)
+    adress = models.CharField("Адресс", max_length=255)
+
+    def __str__(self):
+        return self.name
+
+
+class Genre(models.Model):
+    name = models.CharField("Жанр", max_length=255, unique=True)
+
+    class Meta:
+        verbose_name = "Жанр"
+        verbose_name_plural = "Жанры"
+
+    def __str__(self):
+        return self.name
+
+class BookManager(models.Manager):
+    def get_queryset(self):
+        # Показываем только не удалённые книги
+        return super().get_queryset().filter(is_deleted=False)
+
+
+class Book(models.Model):
     name = models.CharField(max_length=100, verbose_name="Имя книги")
 
     author = models.ForeignKey(
@@ -305,8 +345,10 @@ class Book(models.Model):
     category = models.ForeignKey(
         Category,
         null=True,
+        blank=True,
         on_delete=models.SET_NULL,
-        related_name="books"
+        related_name="books",
+        verbose_name="Категория",
     )
 
     library = models.ForeignKey(
@@ -319,7 +361,7 @@ class Book(models.Model):
     )
 
     publisher = models.ForeignKey(
-        'Publisher',
+        "Publisher",
         on_delete=models.CASCADE,
         null=True,
         blank=True,
@@ -330,28 +372,30 @@ class Book(models.Model):
     published_date = models.DateField(
         null=True,
         blank=True,
-        verbose_name="Дата публикации"
+        verbose_name="Дата публикации",
     )
 
     description = models.TextField(
         blank=True,
-        help_text="Краткое описание книги"
+        help_text="Краткое описание книги",
+        verbose_name="Описание",
     )
 
-    genre = models.CharField(
-        max_length=50,
-        choices=GENRE_CHOICES,
+    genre = models.ForeignKey(
+        "Genre",
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
+        related_name="books",
         verbose_name="Жанр книги",
-        help_text="Жанр книги",
     )
 
     pages = models.PositiveIntegerField(
         null=True,
         blank=True,
         validators=[MaxValueValidator(10000)],
-        help_text="Количество страниц (максимум 10000)"
+        help_text="Количество страниц (максимум 10000)",
+        verbose_name="Страниц",
     )
 
     price = models.DecimalField(
@@ -367,32 +411,54 @@ class Book(models.Model):
         decimal_places=2,
         null=True,
         blank=True,
-        verbose_name="Цена со скидкой"
+        verbose_name="Цена со скидкой",
     )
 
     is_bestseller = models.BooleanField(
         default=False,
-        verbose_name="Бестселлер"
+        verbose_name="Бестселлер",
     )
 
-    created_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Создано",
+    )
 
-    def __str__(self):
-        return f"{self.name} by {self.author or 'Unknown'}"
+    # мягкое удаление
+    is_deleted = models.BooleanField(
+        default=False,
+        verbose_name="Удалена",
+        help_text="Помечает книгу как удалённую без физического удаления из БД.",
+    )
 
+    # менеджеры
+    objects = BookManager()          # только не удалённые
+    all_objects = models.Manager()   # все записи, включая удалённые
 
+    def delete(self, *args, **kwargs):
+        """Мягкое удаление — пометка is_deleted=True."""
+        self.is_deleted = True
+        self.save(update_fields=["is_deleted"])
+
+    def restore(self):
+        """Восстановление книги."""
+        self.is_deleted = False
+        self.save(update_fields=["is_deleted"])
 
     @property
     def rating(self):
-        result = self.reviews.aggregate(avg_rating=Avg('rating'))['avg_rating']
-        return  float(result) if result is not None else 0.0
+        result = self.reviews.aggregate(avg_rating=Avg("rating"))["avg_rating"]
+        return float(result) if result is not None else 0.0
 
     def __str__(self):
         return self.name
 
-from django.db import models
-
-
+class DeletedBook(Book):
+    class Meta:
+        proxy = True
+        verbose_name = "Удалённая книга"
+        verbose_name_plural = "Удалённые книги"
 
 
 class Event(models.Model):
@@ -400,12 +466,8 @@ class Event(models.Model):
         'Название события',
         max_length=255
     )
-    description = models.TextField(
-        'Описание события'
-    )
-    event_date = models.DateTimeField(
-        'Дата и время проведения'
-    )
+    description = models.TextField('Описание события')
+    event_date = models.DateTimeField('Дата и время проведения')
     library = models.ForeignKey(
         'Library',
         on_delete=models.CASCADE,
@@ -425,8 +487,8 @@ class Event(models.Model):
         ordering = ['-event_date']
 
     def __str__(self):
-
         return f'{self.title} ({self.event_date:%d.%m.%Y %H:%M})'
+
 
 class EventParticipant(models.Model):
     event = models.ForeignKey(
@@ -455,9 +517,7 @@ class EventParticipant(models.Model):
         return f'{self.member} — {self.event}'
 
 
-# ДЗ_8 (https://lms.itcareerhub.de/mod/assign/view.php?id=7551)
-
-
+# Статусы для задач и подзадач
 STATUS_CHOICES = [
     ('new', 'New'),
     ('in_progress', 'In progress'),
@@ -498,8 +558,6 @@ class Task(models.Model):
         return self.title
 
 
-
-
 class SubTask(models.Model):
     title = models.CharField('Название подзадачи', max_length=255)
     description = models.TextField('Описание подзадачи')
@@ -525,10 +583,3 @@ class SubTask(models.Model):
 
     def __str__(self):
         return f'{self.title} ({self.task})'
-
-class Publisher(models.Model):
-    name = models.CharField(max_length=100)
-    established_date = models.DateField()
-
-    def __str__(self):
-        return self.name

@@ -5,6 +5,7 @@ from rest_framework.decorators import api_view, action
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
+from rest_framework.settings import api_settings
 
 from .models import Book, Genre, Category
 from .serializers import (
@@ -21,24 +22,30 @@ from django.db.models import Count
 @api_view(['GET', 'POST'])
 def book_list_create(request):
     """
-    GET  /books/        -> список всех книг (краткий сериализатор)
-    POST /books/        -> создание новой книги
+    GET  /books/  -> список всех книг (пагинация, краткий сериализатор)
+    POST /books/  -> создание новой книги
     """
     if request.method == 'GET':
-        books = Book.objects.all()
-        serializer = BookListSerializer(books, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        qs = Book.objects.all().order_by("-id")
 
-    elif request.method == 'POST':
-        serializer = BookCreateUpdateSerializer(data=request.data)
-        if serializer.is_valid():
-            book = serializer.save()
-            return Response(
-                BookDetailSerializer(book).data,
-                status=status.HTTP_201_CREATED
-            )
+        # берём глобальный пагинатор (CursorPagination)
+        paginator_class = api_settings.DEFAULT_PAGINATION_CLASS
+        paginator = paginator_class()  # ВАЖНО: вызвать класс
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        page = paginator.paginate_queryset(qs, request)
+        serializer = BookListSerializer(page, many=True)
+        return paginator.get_paginated_response(serializer.data)
+
+    # POST — без пагинации, просто создаём книгу
+    serializer = BookCreateUpdateSerializer(data=request.data)
+    if serializer.is_valid():
+        book = serializer.save()
+        return Response(
+            BookDetailSerializer(book).data,
+            status=status.HTTP_201_CREATED
+        )
+
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET', 'PUT', 'DELETE'])

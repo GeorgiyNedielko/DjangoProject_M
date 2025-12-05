@@ -1,5 +1,6 @@
 from pathlib import Path
 from environ import Env
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 env = Env()
 Env.read_env(BASE_DIR / '.env')
@@ -134,42 +135,88 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 LOG_DIR = BASE_DIR / "logs"
 LOG_DIR.mkdir(exist_ok=True)   # на всякий случай создаём папку
 
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
+
     "formatters": {
         "default": {
             "format": "[{levelname}] {asctime} {name}: {message}",
             "style": "{",
         },
+        "verbose": {
+            "format": "[{asctime}] {levelname} {name}: {message}",
+            "style": "{",
+        },
     },
+
     "handlers": {
+        # 1) Логи работы сервера -> консоль
         "console": {
             "class": "logging.StreamHandler",
             "formatter": "default",
         },
+
+        # Общий лог проекта
         "file_project": {
             "class": "logging.FileHandler",
-            "filename": str(LOG_DIR / "project.log"),   # <= сюда будет писать
+            "filename": str(LOG_DIR / "project.log"),
             "formatter": "default",
         },
+
+        # Ошибки (можно оставить как было)
         "file_errors": {
             "class": "logging.FileHandler",
-            "filename": str(LOG_DIR / "errors.log"),    # <= а сюда ошибки
+            "filename": str(LOG_DIR / "errors.log"),
             "formatter": "default",
             "level": "ERROR",
         },
+
+        # 2) HTTP-запросы -> logs/http_logs.log
+        "http_file": {
+            "class": "logging.FileHandler",
+            "filename": str(LOG_DIR / "http_logs.log"),
+            "formatter": "verbose",
+        },
+
+        # 3) SQL-запросы -> logs/db_logs.log
+        "db_file": {
+            "class": "logging.FileHandler",
+            "filename": str(LOG_DIR / "db_logs.log"),
+            "formatter": "verbose",
+        },
     },
+
     "loggers": {
+        # Общие логи Django
         "django": {
             "handlers": ["console", "file_project"],
             "level": "INFO",
         },
-        "django.request": {
-            "handlers": ["file_errors"],
-            "level": "ERROR",
+
+        # Логи работы dev-сервера (runserver) -> консоль
+        "django.server": {
+            "handlers": ["console"],
+            "level": "INFO",
             "propagate": False,
         },
+
+        # HTTP-запросы и ответы -> http_logs.log
+        "django.request": {
+            "handlers": ["http_file", "file_errors"],
+            "level": "INFO",
+            "propagate": False,
+        },
+
+        # SQL-запросы -> db_logs.log
+        "django.db.backends": {
+            "handlers": ["db_file"],
+            "level": "DEBUG",    # чтобы видеть все запросы
+            "propagate": False,
+        },
+
+        # проектный логгер
         "project": {
             "handlers": ["console", "file_project"],
             "level": "INFO",
@@ -177,10 +224,15 @@ LOGGING = {
     },
 }
 
+
 REST_FRAMEWORK = {
     "DEFAULT_FILTER_BACKENDS": [
         "django_filters.rest_framework.DjangoFilterBackend",
         "rest_framework.filters.SearchFilter",
         "rest_framework.filters.OrderingFilter",
-    ]
+    ],
+
+    "DEFAULT_PAGINATION_CLASS": "library.pagination.DefaultCursorPagination",
+    "PAGE_SIZE": 6,
 }
+

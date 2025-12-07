@@ -4,6 +4,9 @@ from django.shortcuts import render, redirect
 
 from .models import Project, Task, Tag, ProjectFile, SubTask, Category
 
+from rest_framework.authtoken.models import Token
+
+admin.site.register(Token)
 
 class ReplaceCharactersForm(forms.Form):
     old_char = forms.CharField(label="Старый символ", max_length=10)

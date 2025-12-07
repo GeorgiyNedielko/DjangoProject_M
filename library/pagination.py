@@ -1,6 +1,6 @@
 from rest_framework.pagination import CursorPagination
 
 class DefaultCursorPagination(CursorPagination):
-    page_size = 6
+    page_size = 5
     ordering = "-id"
 

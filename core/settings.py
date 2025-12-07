@@ -1,6 +1,9 @@
 from pathlib import Path
 from environ import Env
 
+from datetime import timedelta
+
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 env = Env()
 Env.read_env(BASE_DIR / '.env')
@@ -30,11 +33,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'library',
     'core',
-    'Meta_Admin',
+    'django_filters',
+    'library',
+    'Meta_Admin.apps.MetaAdminConfig',
     'rest_framework',
-    "django_filters",
+    'rest_framework.authtoken',
 ]
 
 MIDDLEWARE = [
@@ -233,6 +237,30 @@ REST_FRAMEWORK = {
     ],
 
     "DEFAULT_PAGINATION_CLASS": "library.pagination.DefaultCursorPagination",
-    "PAGE_SIZE": 6,
+        "PAGE_SIZE": 5,
+
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.BasicAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    # другие классы аутентификации (если есть)
+
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+
+        'rest_framework.permissions.AllowAny',
+    ],
 }
 
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    'ROTATE_REFRESH_TOKENS': False,
+    'BLACKLIST_AFTER_ROTATION': False,
+
+    'AUTH_HEADER_TYPES': ('Bearer',),
+}

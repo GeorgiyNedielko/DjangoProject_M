@@ -7,7 +7,9 @@ from .api_views import (
     SubTaskDetailUpdateDeleteView,
     subtask_statuses,
     subtasks_by_weekday,
+    ProtectedDataView
 )
+
 
 urlpatterns = [
 
@@ -25,6 +27,8 @@ urlpatterns = [
 
     # weekda
     path("api/subtasks/day/<str:weekday>/", api_views.subtasks_by_weekday),
+    path("api/protected/", ProtectedDataView.as_view(), name="protected"),
+
 ]
 
 

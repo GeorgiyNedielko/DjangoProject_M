@@ -10,7 +10,7 @@ class Command(BaseCommand):
     help = "Создаёт группы Manager, Client и Developer и назначает им нужные права."
 
     def handle(self, *args, **options):
-        # --- создаём группы (если их ещё нет) ---
+        #  создаём группы (если их ещё нет)
         manager_group, _ = Group.objects.get_or_create(name="Manager")
         client_group, _ = Group.objects.get_or_create(name="Client")
         developer_group, _ = Group.objects.get_or_create(name="Developer")

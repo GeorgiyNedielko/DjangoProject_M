@@ -17,6 +17,7 @@ from .serializers import (
     SubTaskSerializer,
     SubTaskCreateSerializer,
 )
+from .permissions import IsOwnerOrReadOnly
 
 
 class ProtectedDataView(APIView):
@@ -53,15 +54,13 @@ DAY_NAME_TO_WEEKDAY = {
 }
 
 
-# ---------- TASKS ----------
-
 class TaskListCreateView(generics.ListCreateAPIView):
     """
     GET /api/tasks/   -> список задач (с фильтрами, поиском, сортировкой)
-    POST /api/tasks/  -> создание задачи
+    POST /api/tasks/  -> создание задачи (owner = request.user)
     """
     queryset = Task.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
 
     filter_backends = [
         DjangoFilterBackend,
@@ -84,6 +83,14 @@ class TaskListCreateView(generics.ListCreateAPIView):
             return TaskCreateSerializer
         return TaskSerializer
 
+    def get_queryset(self):
+        # Показываем задачи только текущего пользователя
+        return Task.objects.filter(owner=self.request.user)
+
+    def perform_create(self, serializer):
+        # извлекаем текущего пользователя из request
+        serializer.save(owner=self.request.user)
+
 
 class TaskDetailView(generics.RetrieveUpdateDestroyAPIView):
     """
@@ -91,9 +98,10 @@ class TaskDetailView(generics.RetrieveUpdateDestroyAPIView):
     PUT    /api/tasks/<id>/ -> полное обновление
     PATCH  /api/tasks/<id>/ -> частичное обновление
     DELETE /api/tasks/<id>/ -> удалить
+    (менять/удалять может только владелец)
     """
     queryset = Task.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
 
     def get_serializer_class(self):
         if self.request.method in ["PUT", "PATCH"]:
@@ -101,18 +109,29 @@ class TaskDetailView(generics.RetrieveUpdateDestroyAPIView):
         return TaskSerializer
 
 
+class MyTasksListView(generics.ListAPIView):
+    """
+    GET /api/tasks/my/ -> задачи, принадлежащие текущему пользователю
+    """
+    serializer_class = TaskSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Task.objects.filter(owner=self.request.user)
+
+
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def tasks_stats(request):
     """
-    Статистика задач:
+    Статистика задач ТЕКУЩЕГО пользователя:
     - общее количество
     - количество по каждому статусу
     - количество просроченных задач (due_date < сейчас)
     """
 
     now = timezone.now()
-    qs = Task.objects.filter(deleted_at__isnull=True)
+    qs = Task.objects.filter(deleted_at__isnull=True, owner=request.user)
 
     total_tasks = qs.count()
     tasks_by_status = qs.values("status").annotate(count=Count("id"))
@@ -137,7 +156,7 @@ def subtask_statuses(request):
     return Response({"available_statuses": statuses})
 
 
-# ---------- SUBTASKS ----------
+
 
 class SubTaskPagination(PageNumberPagination):
     """
@@ -151,22 +170,19 @@ class SubTaskPagination(PageNumberPagination):
 
 class SubTaskListCreateView(generics.ListCreateAPIView):
     """
-    GET  /api/subtasks/   -> список подзадач (с пагинацией, фильтрацией, поиском, сортировкой)
-    POST /api/subtasks/   -> создание подзадачи
+    GET  /api/subtasks/   -> список подзадач (пагинация, фильтры, поиск, сортировка)
+    POST /api/subtasks/   -> создание подзадачи (owner = request.user)
     """
     queryset = SubTask.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
     pagination_class = SubTaskPagination
 
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
 
-    # фильтрация по статусу и дедлайну
     filterset_fields = ["status", "deadline"]
 
-    # поиск по названию и описанию
     search_fields = ["title", "description"]
 
-    # сортировка по дате создания
     ordering_fields = ["created_at"]
     ordering = ["-created_at"]
 
@@ -175,6 +191,13 @@ class SubTaskListCreateView(generics.ListCreateAPIView):
             return SubTaskCreateSerializer
         return SubTaskSerializer
 
+    def get_queryset(self):
+
+        return SubTask.objects.filter(owner=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
+
 
 class SubTaskDetailUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     """
@@ -182,9 +205,10 @@ class SubTaskDetailUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     PUT    /api/subtasks/<id>/
     PATCH  /api/subtasks/<id>/
     DELETE /api/subtasks/<id>/
+    (менять/удалять может только владелец)
     """
     queryset = SubTask.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
 
     def get_serializer_class(self):
         if self.request.method in ["PUT", "PATCH"]:
@@ -197,7 +221,7 @@ class SubTaskDetailUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
 def subtasks_by_weekday(request, weekday):
     """
     GET /api/subtasks/day/sunday
-    Фильтрация подзадач по дню недели главной задачи.
+    Фильтрация подзадач по дню недели главной задачи (ТОЛЬКО текущего пользователя).
     """
     weekday = weekday.lower()
     weekday_num = DAY_NAME_TO_WEEKDAY.get(weekday)
@@ -211,7 +235,10 @@ def subtasks_by_weekday(request, weekday):
             status=400
         )
 
-    queryset = SubTask.objects.filter(task__due_date__week_day=weekday_num).order_by("-created_at")
+    queryset = SubTask.objects.filter(
+        task__due_date__week_day=weekday_num,
+        owner=request.user,
+    ).order_by("-created_at")
 
     paginator = SubTaskPagination()
     page = paginator.paginate_queryset(queryset, request)

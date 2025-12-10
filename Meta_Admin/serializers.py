@@ -4,10 +4,12 @@ from django.utils import timezone
 from .models import Task, SubTask, Category
 
 
-# ===== Task serializers =====
+
 
 class TaskSerializer(serializers.ModelSerializer):
     """Сериализатор для чтения задач (list, detail)."""
+    owner = serializers.ReadOnlyField(source='owner.username')
+
     class Meta:
         model = Task
         fields = "__all__"
@@ -15,10 +17,10 @@ class TaskSerializer(serializers.ModelSerializer):
 
 class TaskCreateSerializer(serializers.ModelSerializer):
     """Сериализатор для создания/обновления задач с валидацией due_date."""
-
     class Meta:
         model = Task
-        fields = "__all__"
+
+        exclude = ("owner",)
 
     def validate_due_date(self, value):
         """
@@ -35,27 +37,27 @@ class TaskCreateSerializer(serializers.ModelSerializer):
         return value
 
 
-# ===== SubTask serializers =====
+
 
 class SubTaskSerializer(serializers.ModelSerializer):
     """Обычный сериализатор для отображения подзадач."""
+    owner = serializers.ReadOnlyField(source='owner.username')
+
     class Meta:
         model = SubTask
         fields = "__all__"
 
 
 class SubTaskCreateSerializer(serializers.ModelSerializer):
-    """Создание/обновление SubTask. created_at только для чтения."""
+    """Создание/обновление SubTask. created_at и owner только для чтения."""
     created_at = serializers.DateTimeField(read_only=True)
 
     class Meta:
         model = SubTask
-        fields = "__all__"
+        exclude = ("owner",)
 
 
 
-
-# ===== Category serializers =====
 
 class CategoryCreateSerializer(serializers.ModelSerializer):
     """Создание/обновление Category с проверкой уникальности name."""
@@ -81,7 +83,6 @@ class CategoryCreateSerializer(serializers.ModelSerializer):
         return super().update(instance, validated_data)
 
 
-# ===== TaskDetailSerializer с вложенными подзадачами =====
 
 class TaskDetailSerializer(serializers.ModelSerializer):
     """

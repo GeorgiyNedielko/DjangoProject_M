@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'Meta_Admin.apps.MetaAdminConfig',
     'rest_framework',
     'rest_framework.authtoken',
+    'drf_yasg',
 ]
 
 MIDDLEWARE = [
@@ -245,12 +246,12 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',
 
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-    # другие классы аутентификации (если есть)
+
 
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
-
+        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
         'rest_framework.permissions.AllowAny',
     ],
 }

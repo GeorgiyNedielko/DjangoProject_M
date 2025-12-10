@@ -3,6 +3,7 @@ from django.core.validators import MinLengthValidator, MaxValueValidator
 from django.contrib.auth.models import User
 from django import forms
 from django.shortcuts import render, redirect
+from django.conf import settings
 
 
 
@@ -102,6 +103,15 @@ class Task(models.Model):
     due_date = models.DateTimeField(null=True, blank=True)
     tags = models.ManyToManyField('Tag', blank=True, related_name='tasks')
 
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='tasks',
+        verbose_name='Владелец задачи',
+        null=True,
+        blank=True,
+    )
+
     def __str__(self):
         return self.title
 
@@ -159,6 +169,15 @@ class SubTask(models.Model):
         choices=STATUS_CHOICES,
         default=Task.STATUS_NEW,
         verbose_name="Статус подзадачи",
+    )
+
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='subtasks',
+        verbose_name='Владелец подзадачи',
+        null=True,
+        blank=True,
     )
 
     def __str__(self):

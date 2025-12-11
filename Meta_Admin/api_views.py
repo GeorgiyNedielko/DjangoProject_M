@@ -3,10 +3,7 @@ from django.db.models import Count
 
 from rest_framework import generics, filters
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.views import APIView
-from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
 
 from django_filters.rest_framework import DjangoFilterBackend
 
@@ -19,6 +16,19 @@ from .serializers import (
 )
 from .permissions import IsOwnerOrReadOnly
 
+from django.contrib.auth import authenticate
+
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework.permissions import AllowAny, IsAuthenticated
+
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
+
+from .serializers import RegisterSerializer
+from datetime import timedelta
+from django.conf import settings
 
 class ProtectedDataView(APIView):
     permission_classes = [IsAuthenticated]
@@ -245,3 +255,136 @@ def subtasks_by_weekday(request, weekday):
 
     serializer = SubTaskSerializer(page, many=True)
     return paginator.get_paginated_response(serializer.data)
+
+
+def set_jwt_cookies(response, access_token, refresh_token):
+    """
+    Устанавливаем access и refresh токены в HttpOnly cookies.
+    """
+    # время жизни лучше синхронизировать с SIMPLE_JWT
+    access_lifetime = getattr(settings, "SIMPLE_JWT", {}).get("ACCESS_TOKEN_LIFETIME", timedelta(minutes=5))
+    refresh_lifetime = getattr(settings, "SIMPLE_JWT", {}).get("REFRESH_TOKEN_LIFETIME", timedelta(days=7))
+
+    response.set_cookie(
+        key="access_token",
+        value=str(access_token),
+        httponly=True,
+        secure=False,        # на проде = True + HTTPS
+        samesite="Lax",
+        max_age=int(access_lifetime.total_seconds()),
+    )
+    response.set_cookie(
+        key="refresh_token",
+        value=str(refresh_token),
+        httponly=True,
+        secure=False,
+        samesite="Lax",
+        max_age=int(refresh_lifetime.total_seconds()),
+    )
+
+
+def clear_jwt_cookies(response):
+    response.delete_cookie("access_token")
+    response.delete_cookie("refresh_token")
+
+
+class RegisterView(APIView):
+    """
+    POST /api/auth/register/
+    Регистрация нового пользователя.
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = RegisterSerializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.save()
+            return Response(
+                {"detail": "Пользователь успешно зарегистрирован."},
+                status=status.HTTP_201_CREATED,
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class LoginView(APIView):
+    """
+    POST /api/auth/login/
+    Вход в аккаунт, выдача access/refresh JWT + установка HttpOnly cookies.
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        username = request.data.get("username")
+        password = request.data.get("password")
+
+        if not username or not password:
+            return Response(
+                {"detail": "Необходимо указать username и password."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        user = authenticate(request, username=username, password=password)
+
+        if not user:
+            return Response(
+                {"detail": "Неверные учетные данные."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        refresh = RefreshToken.for_user(user)
+        access = refresh.access_token
+
+        data = {
+            "access": str(access),
+            "refresh": str(refresh),
+            "username": user.username,
+        }
+
+        response = Response(data, status=status.HTTP_200_OK)
+        set_jwt_cookies(response, access, refresh)
+        return response
+
+
+class LogoutView(APIView):
+    """
+    POST /api/auth/logout/
+    Выход из аккаунта:
+    - заносим refresh-токен в blacklist
+    - удаляем cookies
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        refresh_token = request.data.get("refresh")
+
+        # если клиент хранит refresh-токен только в cookie
+        if refresh_token is None:
+            refresh_token = request.COOKIES.get("refresh_token")
+
+        if not refresh_token:
+            response = Response(
+                {"detail": "Refresh токен не найден."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+            clear_jwt_cookies(response)
+            return response
+
+        try:
+            token = RefreshToken(refresh_token)
+            # поместить в blacklist
+            token.blacklist()
+        except TokenError:
+
+            response = Response(
+                {"detail": "Невалидный или уже аннулированный токен."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+            clear_jwt_cookies(response)
+            return response
+
+        response = Response(
+            {"detail": "Успешный выход из аккаунта."},
+            status=status.HTTP_205_RESET_CONTENT,
+        )
+        clear_jwt_cookies(response)
+        return response

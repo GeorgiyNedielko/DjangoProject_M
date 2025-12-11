@@ -1,4 +1,3 @@
-from django.urls import path
 from . import api_views
 from .api_views import (
     TaskListCreateView,
@@ -9,7 +8,8 @@ from .api_views import (
     subtasks_by_weekday,
     ProtectedDataView
 )
-
+from django.urls import path
+from .api_views import RegisterView, LoginView, LogoutView
 
 urlpatterns = [
 
@@ -29,6 +29,9 @@ urlpatterns = [
     path("api/subtasks/day/<str:weekday>/", api_views.subtasks_by_weekday),
     path("api/protected/", ProtectedDataView.as_view(), name="protected"),
 
+    path("register/", RegisterView.as_view(), name="auth-register"),
+    path("login/", LoginView.as_view(), name="auth-login"),
+    path("logout/", LogoutView.as_view(), name="auth-logout"),
 ]
 
 

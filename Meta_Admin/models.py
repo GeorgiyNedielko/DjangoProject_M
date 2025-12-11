@@ -1,10 +1,19 @@
 from django.db import models
 from django.core.validators import MinLengthValidator, MaxValueValidator
 from django.contrib.auth.models import User
-from django import forms
-from django.shortcuts import render, redirect
 from django.conf import settings
 
+from datetime import timedelta
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "ROTATE_REFRESH_TOKENS": False,
+    "BLACKLIST_AFTER_ROTATION": True,
+    "AUTH_HEADER_TYPES": ("Bearer",),
+    "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
+    "TOKEN_BLACKLIST_ENABLED": True,
+}
 
 
 class Project(models.Model):
